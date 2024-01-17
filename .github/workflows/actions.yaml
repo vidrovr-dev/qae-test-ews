@@ -1,0 +1,41 @@
+name: Simple Upload API Build
+run-name: ${{ github.actor }} testing API
+on:
+  push:
+    branches: [ "main" ]
+    
+jobs:
+  tests:
+    name: "Test API"
+    runs-on: self-hosted
+    steps:
+
+      - name: Checkout repo
+        id: checkout_repo
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -U pip
+      - run: pip install -Ur requirements.txt
+
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+
+      - name: Unit Tests
+        run: echo "Replace me with your command(s) to run Unit Tests."
+
+      - name: Docker Compose Build
+        run: docker compose -f docker-compose.yml build
+
+      - name: Docker Compose Up
+        run: docker compose -f docker-compose.yml up -d
+      
+      - name: Wait for Docker Compose Up
+        run: sleep 40
+
+      - name: Integration Tests
+        run: echo "Replace me with your command(s) to run Integration Tests"

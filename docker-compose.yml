@@ -1,0 +1,83 @@
+x-common:
+  minio_host: &minio_host "http://172.18.32.0:9000"
+  minio_access_key: &minio_access_key abc123
+  minio_secret_key: &minio_secret_key zyxw9876
+  postgres_user: &postgres_user admin
+  postgres_pw: &postgres_pw password123
+  postgres_db: &postgres_db main
+  postgres_host: &postgres_host 172.18.16.0
+
+services:
+  upload_api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      tags:
+        - upload_api:latest
+    container_name: upload_api
+    networks:
+      - upload_api
+    ports:
+      - 8080:5678
+    stdin_open: true
+    tty: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ENDPOINT_URL: *minio_host
+      AWS_ACCESS_KEY_ID: *minio_access_key
+      AWS_SECRET_ACCESS_KEY: *minio_secret_key
+      PG_USER: *postgres_user
+      PG_PW: *postgres_pw
+      PG_DB: *postgres_db
+      PG_HOST: *postgres_host
+
+  postgres:
+    container_name: postgres
+    image: postgres:16.0-alpine3.18
+    shm_size: 256MB
+    environment:
+      POSTGRES_USER: *postgres_user
+      POSTGRES_PASSWORD: *postgres_pw
+      POSTGRES_DB: *postgres_db
+    ports:
+      - "5432:5432"
+    networks:
+      upload_api:
+        ipv4_address: *postgres_host
+    healthcheck:
+      test: pg_isready -U admin
+
+  minio:
+    container_name: minio
+    image: minio/minio:RELEASE.2023-10-07T15-07-38Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ACCESS_KEY: *minio_access_key
+      MINIO_SECRET_KEY: *minio_secret_key
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      upload_api:
+        ipv4_address: 172.18.32.0
+    healthcheck:
+      test: curl -f http://localhost:9000/minio/health/live
+
+
+volumes:
+  logvolume01: {}
+
+
+networks:
+  upload_api:
+    name: upload_api
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16
+          ip_range: 172.18.1.0/24
+          gateway: 172.18.1.254

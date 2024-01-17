@@ -1,0 +1,6 @@
+boto3
+orjson
+psycopg2
+sanic
+SQLAlchemy
+yt-dlp
