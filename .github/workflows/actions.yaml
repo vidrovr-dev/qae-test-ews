@@ -7,7 +7,7 @@ on:
 jobs:
   tests:
     name: "Test API"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
 
       - name: Checkout repo
